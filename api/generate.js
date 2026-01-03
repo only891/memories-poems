@@ -1,10 +1,8 @@
 // api/generate.js
 import * as genAIModule from '@google/genai';
 
-// 兼容性处理：有些环境会把类放在 .default 里，有些则直接放在根部
-const GoogleGenerativeAI = genAIModule.GoogleGenerativeAI || (genAIModule.default && genAIModule.default.GoogleGenerativeAI);
-
 export default async function handler(req, res) {
+  // 1. 允许跨域及请求方法检查
   if (req.method !== 'POST') {
     return res.status(405).json({ error: '仅支持 POST 请求' });
   }
@@ -15,8 +13,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 2. 深度解析 GoogleGenerativeAI 类
+    // 尝试所有可能的嵌套路径
+    let GoogleGenerativeAI = 
+        genAIModule.GoogleGenerativeAI || 
+        (genAIModule.default && genAIModule.default.GoogleGenerativeAI) ||
+        (genAIModule.default && genAIModule.default.default && genAIModule.default.default.GoogleGenerativeAI);
+
+    // 3. 如果还是找不到，输出模块结构到 Log 以便诊断
     if (!GoogleGenerativeAI) {
-      throw new Error("无法从模块中解析 GoogleGenerativeAI 类");
+      console.log("模块导出结构诊断:", JSON.stringify(Object.keys(genAIModule)));
+      throw new Error("无法从模块中解析 GoogleGenerativeAI 类，请查看 Log 中的结构诊断。");
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -29,6 +36,9 @@ export default async function handler(req, res) {
     return res.status(200).json({ text: response.text() });
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return res.status(500).json({ error: "AI 生成失败", details: error.message });
+    return res.status(500).json({ 
+      error: "AI 生成失败", 
+      details: error.message 
+    });
   }
 }
