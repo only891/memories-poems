@@ -2,74 +2,48 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>诗词消消乐</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body, #root { height: 100%; margin: 0; padding: 0; background-color: #fcfaf2; font-family: 'Noto Serif SC', serif; }
+        body { font-family: 'Noto Serif SC', serif; background-color: #fcfaf2; }
         .bg-paper { background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png"); }
     </style>
-    <script type="importmap">
-    {
-      "imports": {
-        "react-dom/": "https://esm.sh/react-dom@19.0.0/",
-        "react/": "https://esm.sh/react@19.0.0/",
-        "react": "https://esm.sh/react@19.0.0",
-        "react-markdown": "https://esm.sh/react-markdown@9?bundle"
-      }
-    }
-    </script>
 </head>
 <body>
     <div id="root"></div>
 
-    <script type="module">
-        import React, { useState, useEffect } from 'react';
-        import { createRoot } from "https://esm.sh/react-dom@19.0.0/client";
-        import ReactMarkdown from 'react-markdown';
-
-        // 核心：调用后端 API 而不是直接调 Google
-        async function fetchGemini(prompt) {
-            const response = await fetch('/api/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt })
-            });
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
-            return data.text;
-        }
+    <script type="text/babel">
+        // 注意：在 Vercel 静态部署中，客户端可以通过这个方式读取带 NEXT_PUBLIC_ 前缀的变量
+        const API_KEY = ""; // 如果下面报错，你可以暂时填入 Key 测试，但正式建议通过后端转发
 
         function App() {
-            const [content, setContent] = useState("正在加载诗词...");
-            const [loading, setLoading] = useState(true);
+            const [status, setStatus] = React.useState("正在准备笔墨...");
 
-            useEffect(() => {
-                fetchGemini("请随机生成一句优美的中国古代诗词，并附带简短赏析。")
-                    .then(text => {
-                        setContent(text);
-                        setLoading(false);
-                    })
-                    .catch(err => {
-                        setContent("加载失败，请检查环境变量配置。错误：" + err.message);
-                        setLoading(false);
-                    });
-            }, []);
-
-            return React.createElement('div', { 
-                className: "bg-paper h-full flex items-center justify-center p-8 flex-col text-center" 
-            }, [
-                React.createElement('h1', { className: "text-3xl font-bold mb-6 text-amber-900" }, "诗词消消乐"),
-                React.createElement('div', { className: "max-w-md bg-white p-6 rounded-lg shadow-lg markdown-body" }, 
-                    loading ? "墨香酝酿中..." : React.createElement(ReactMarkdown, null, content)
-                )
-            ]);
+            return (
+                <div className="h-screen flex flex-col items-center justify-center bg-paper p-4 text-center">
+                    <h1 className="text-4xl font-bold text-amber-900 mb-8">诗词消消乐</h1>
+                    <div className="bg-white p-8 rounded-xl shadow-xl max-w-lg w-full">
+                        <p className="text-xl text-slate-700 leading-relaxed mb-6">
+                            {status}
+                        </p>
+                        <button 
+                            className="bg-amber-700 text-white px-6 py-2 rounded-full hover:bg-amber-800 transition shadow-md"
+                            onClick={() => setStatus("AI 诗人正在构思中...")}
+                        >
+                            开始挑战
+                        </button>
+                    </div>
+                </div>
+            );
         }
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
