@@ -24,10 +24,12 @@ export class GeminiService {
     onChunk: (text: string) => void,
     onSources?: (sources: GroundingSource[]) => void
   ) {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) throw new Error("API_KEY is not defined");
+    
+    const ai = new GoogleGenAI({ apiKey });
     
     try {
-        // 使用 gemini-2.5-flash 模型并启用 Google 搜索
         const responseStream = await ai.models.generateContentStream({
             model: "gemini-2.5-flash",
             contents: `请简要赏析：${query}。
@@ -66,7 +68,10 @@ export class GeminiService {
 
   // Generate artistic background based on poem
   async generateArt(prompt: string, size: "1K" | "2K" | "4K" = "1K") {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) throw new Error("API_KEY is not defined");
+
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-image-preview',
       contents: {
@@ -80,18 +85,23 @@ export class GeminiService {
       },
     });
 
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
-      }
+    const parts = response.candidates?.[0]?.content?.parts;
+    if (parts) {
+        for (const part of parts) {
+            if (part.inlineData) {
+                return `data:image/png;base64,${part.inlineData.data}`;
+            }
+        }
     }
     return null;
   }
 
   // Animate image with Veo
   async animateScene(imageB64: string, prompt: string) {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    // Remove data:image/...;base64, prefix
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) throw new Error("API_KEY is not defined");
+
+    const ai = new GoogleGenAI({ apiKey });
     const cleanB64 = imageB64.split(',')[1];
     
     let operation = await ai.models.generateVideos({
@@ -114,7 +124,7 @@ export class GeminiService {
     }
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+    const response = await fetch(`${downloadLink}&key=${apiKey}`);
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   }
