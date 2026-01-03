@@ -1,0 +1,8 @@
+{
+  "name": "雅韵流转",
+  "description": "一款以中国古诗词为主题的消除益智游戏。通过匹配上下句进行消除，支持连锁消除、诗词知识搜索及AI意境绘图功能。",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
