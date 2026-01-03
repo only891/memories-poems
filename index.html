@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -8,128 +7,69 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: 'Noto Serif SC', serif;
-            background-color: #f1f5f9;
-        }
-        .bg-paper {
-            background-color: #fcfaf2;
-            background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
-        }
-        @keyframes ink-splash {
-            0% { transform: scale(0.5); opacity: 0.8; filter: blur(1px); }
-            100% { transform: scale(2); opacity: 0; filter: blur(4px); }
-        }
-        .animate-ink {
-            animation: ink-splash 0.5s ease-out forwards;
-        }
-        @keyframes line-draw {
-            to { stroke-dashoffset: 0; }
-        }
-        .connection-line {
-            stroke-dasharray: 2000;
-            stroke-dashoffset: 2000;
-            animation: line-draw 0.3s ease-in forwards;
-            filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.7));
-        }
-        @keyframes multiplier-pop {
-            0% { transform: scale(0.3) translate(-50%, -50%); opacity: 0; }
-            20% { transform: scale(1.1) translate(-50%, -50%); opacity: 1; }
-            85% { transform: scale(1) translate(-50%, -50%); opacity: 1; }
-            100% { transform: scale(0.8) translate(-50%, -50%); opacity: 0; }
-        }
-        .animate-multiplier-pop {
-            animation: multiplier-pop 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            transform-origin: top left;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #e2e8f0;
-            border-radius: 4px;
-        }
-        .animate-float {
-            animation: float 3s ease-in-out infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        /* New animations for result screen */
-        @keyframes slide-in-up {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slide-in {
-            opacity: 0;
-            animation: slide-in-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-        @keyframes fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .animate-fade-in {
-            opacity: 0;
-            animation: fade-in 0.5s ease-out forwards;
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body, #root { height: 100%; margin: 0; padding: 0; background-color: #fcfaf2; font-family: 'Noto Serif SC', serif; }
+        .bg-paper { background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png"); }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+        "react/": "https://esm.sh/react@19.0.0/",
+        "react": "https://esm.sh/react@19.0.0",
+        "react-markdown": "https://esm.sh/react-markdown@9?bundle"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from "https://esm.sh/react-dom@19.0.0/client";
+        import ReactMarkdown from 'react-markdown';
+
+        // 核心：调用后端 API 而不是直接调 Google
+        async function fetchGemini(prompt) {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt })
+            });
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+            return data.text;
         }
 
-        /* Markdown Styles */
-        .markdown-body strong {
-            color: #b45309; /* amber-700 */
-            font-weight: 800;
+        function App() {
+            const [content, setContent] = useState("正在加载诗词...");
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchGemini("请随机生成一句优美的中国古代诗词，并附带简短赏析。")
+                    .then(text => {
+                        setContent(text);
+                        setLoading(false);
+                    })
+                    .catch(err => {
+                        setContent("加载失败，请检查环境变量配置。错误：" + err.message);
+                        setLoading(false);
+                    });
+            }, []);
+
+            return React.createElement('div', { 
+                className: "bg-paper h-full flex items-center justify-center p-8 flex-col text-center" 
+            }, [
+                React.createElement('h1', { className: "text-3xl font-bold mb-6 text-amber-900" }, "诗词消消乐"),
+                React.createElement('div', { className: "max-w-md bg-white p-6 rounded-lg shadow-lg markdown-body" }, 
+                    loading ? "墨香酝酿中..." : React.createElement(ReactMarkdown, null, content)
+                )
+            ]);
         }
-        .markdown-body p {
-            margin-bottom: 0.8em;
-            line-height: 1.8;
-        }
-        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
-            color: #78350f; /* amber-900 */
-            font-weight: 900;
-            margin-top: 1.2em;
-            margin-bottom: 0.6em;
-            font-size: 1.1em;
-        }
-        .markdown-body ul {
-            list-style-type: disc;
-            padding-left: 1.2em;
-            margin-bottom: 0.8em;
-            color: #475569;
-        }
-        .markdown-body ol {
-            list-style-type: decimal;
-            padding-left: 1.2em;
-            margin-bottom: 0.8em;
-            color: #475569;
-        }
-        .markdown-body li {
-            margin-bottom: 0.3em;
-        }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "react-markdown": "https://esm.sh/react-markdown@9?bundle"
-  }
-}
-</script>
-</head>
-<body class="text-slate-800">
-    <div id="root" class="h-full"></div>
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
 </body>
 </html>
