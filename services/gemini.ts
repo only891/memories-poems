@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 export interface GroundingSource {
   title: string;
@@ -24,8 +24,9 @@ export class GeminiService {
     onChunk: (text: string) => void,
     onSources?: (sources: GroundingSource[]) => void
   ) {
-    // Vite 的 'define' 会在构建时将 process.env.API_KEY 替换为实际的 Key 字符串。
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // 确保在运行时访问由 Vite 注入的 API_KEY
+    const apiKey = process.env.API_KEY;
+    const ai = new GoogleGenAI({ apiKey });
     
     try {
         const responseStream = await ai.models.generateContentStream({
@@ -66,7 +67,9 @@ export class GeminiService {
 
   // Generate artistic background based on poem
   async generateArt(prompt: string, size: "1K" | "2K" | "4K" = "1K") {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.API_KEY;
+    const ai = new GoogleGenAI({ apiKey });
+    
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-image-preview',
       contents: {
@@ -93,7 +96,8 @@ export class GeminiService {
 
   // Animate image with Veo
   async animateScene(imageB64: string, prompt: string) {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.API_KEY;
+    const ai = new GoogleGenAI({ apiKey });
     const cleanB64 = imageB64.split(',')[1];
     
     let operation = await ai.models.generateVideos({
@@ -116,7 +120,7 @@ export class GeminiService {
     }
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+    const response = await fetch(`${downloadLink}&key=${apiKey}`);
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   }
