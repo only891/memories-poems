@@ -18,30 +18,53 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // 注意：在 Vercel 静态部署中，客户端可以通过这个方式读取带 NEXT_PUBLIC_ 前缀的变量
-        const API_KEY = ""; // 如果下面报错，你可以暂时填入 Key 测试，但正式建议通过后端转发
-
         function App() {
-            const [status, setStatus] = React.useState("正在准备笔墨...");
-
+            const [content, setContent] = React.useState("点击下方按钮开始构思诗句...");
+            const [loading, setLoading] = React.useState(false);
+    
+            const generatePoem = async () => {
+                setLoading(true);
+                setContent("AI 诗人正在研墨，请稍候...");
+                
+                try {
+                    // 请求我们第一步创建的后端接口
+                    const response = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            prompt: "你是一位精通中国古典文学的诗人。请随机生成一句优美的诗词（包含题目、作者、诗句），并附带一段富有诗意的赏析。" 
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    setContent(data.text);
+                } catch (err) {
+                    setContent("无法联络到诗人： " + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+    
             return (
                 <div className="h-screen flex flex-col items-center justify-center bg-paper p-4 text-center">
                     <h1 className="text-4xl font-bold text-amber-900 mb-8">诗词消消乐</h1>
-                    <div className="bg-white p-8 rounded-xl shadow-xl max-w-lg w-full">
-                        <p className="text-xl text-slate-700 leading-relaxed mb-6">
-                            {status}
-                        </p>
+                    <div className="bg-white p-8 rounded-xl shadow-xl max-w-lg w-full min-h-[300px] flex flex-col justify-between">
+                        <div className="text-lg text-slate-700 leading-relaxed mb-6 whitespace-pre-wrap">
+                            {content}
+                        </div>
                         <button 
-                            className="bg-amber-700 text-white px-6 py-2 rounded-full hover:bg-amber-800 transition shadow-md"
-                            onClick={() => setStatus("AI 诗人正在构思中...")}
+                            className={`px-8 py-3 rounded-full text-white font-bold transition shadow-md ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-amber-700 hover:bg-amber-800'}`}
+                            onClick={generatePoem}
+                            disabled={loading}
                         >
-                            开始挑战
+                            {loading ? "构思中..." : "随机生成诗词"}
                         </button>
                     </div>
                 </div>
             );
         }
-
+    
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>

@@ -1,9 +1,14 @@
-// api/generate.js
 import { GoogleGenerativeAI } from "@google/genai";
 
 export default async function handler(req, res) {
-  // 从 Vercel 环境变量中读取 Key
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+  // 这里的变量名必须与你在 Vercel Settings 中设置的一致
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    return res.status(500).json({ error: "服务器未配置 API Key" });
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   try {
