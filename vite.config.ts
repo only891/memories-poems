@@ -5,8 +5,12 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   define: {
-    // 在 Vite 中，'process.env' 默认在客户端不可用。
-    // 我们必须明确地将特定的环境变量定义为字符串，以便在构建时进行替换。
-    'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
+    // 显式定义 process.env.API_KEY。
+    // 构建时，代码中所有的 'process.env.API_KEY' 字符串都会被替换为实际的环境变量值。
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY || ''),
+    // 同时定义 process.env 对象，以防某些库以对象属性方式访问。
+    'process.env': {
+      API_KEY: JSON.stringify(process.env.API_KEY || '')
+    }
   }
 });

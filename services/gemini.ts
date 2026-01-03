@@ -24,7 +24,7 @@ export class GeminiService {
     onChunk: (text: string) => void,
     onSources?: (sources: GroundingSource[]) => void
   ) {
-    // 按照指南要求：必须使用 new GoogleGenAI({ apiKey: process.env.API_KEY })
+    // Vite 的 'define' 会在构建时将 process.env.API_KEY 替换为实际的 Key 字符串。
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     try {
@@ -116,7 +116,6 @@ export class GeminiService {
     }
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    // 使用 process.env.API_KEY 进行视频下载鉴权
     const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
     const blob = await response.blob();
     return URL.createObjectURL(blob);
