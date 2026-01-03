@@ -1,22 +1,37 @@
+// api/generate.js
 import { GoogleGenerativeAI } from "@google/genai";
 
 export default async function handler(req, res) {
-  // 这里的变量名必须与你在 Vercel Settings 中设置的一致
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  
-  if (!apiKey) {
-    return res.status(500).json({ error: "服务器未配置 API Key" });
+  // 1. 检查请求方法
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: '仅支持 POST 请求' });
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  // 2. 检查 API Key
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: "服务器未找到 API Key，请检查 Vercel 环境变量设置" });
+  }
 
   try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
     const { prompt } = req.body;
-    const result = await model.generateContent(prompt);
+    
+    // 3. 调用 Gemini
+    const result = await model.generateContent(prompt || "你好");
     const response = await result.response;
-    res.status(200).json({ text: response.text() });
+    const text = response.text();
+
+    // 4. 返回成功响应
+    return res.status(200).json({ text });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Gemini API Error:", error);
+    // 5. 返回具体的 AI 错误信息
+    return res.status(500).json({ 
+      error: "AI 生成失败", 
+      details: error.message 
+    });
   }
 }
