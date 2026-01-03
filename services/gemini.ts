@@ -18,7 +18,7 @@ export class GeminiService {
     return GeminiService.instance;
   }
 
-  // 使用深度思考模式解析诗句
+  // 使用 Flash 模型快速解析诗句
   async streamPoemExplanation(
     query: string, 
     onChunk: (text: string) => void,
@@ -33,17 +33,16 @@ export class GeminiService {
     
     try {
         const responseStream = await ai.models.generateContentStream({
-            // 使用 Pro 模型以支持复杂推理和深度思考
-            model: "gemini-3-pro-preview",
-            contents: `请对以下诗句进行深度的文化与文学赏析：${query}。
+            // 使用 Gemini 2.5 Flash 实现极速响应
+            model: "gemini-2.5-flash",
+            contents: `请对以下诗句进行精炼赏析：${query}。
             要求：
-            1. 解释核心意象与背后隐喻。
-            2. 详述相关的历史典故与时代背景。
-            3. 分析诗人的情感寄托与艺术特色。
-            语言要求优美凝练，具有深度，字数控制在500字左右。`,
+            1. 简述意象与意境。
+            2. 解释核心典故。
+            3. 概括情感。
+            注意：语言要优美、极其精炼，输出严格控制在 300 字以内，不要冗长。`,
             config: {
-                // 启用深度思考，预算设为最大值 32768
-                thinkingConfig: { thinkingBudget: 32768 },
+                // 取消 thinkingConfig 以获得更快的响应速度
                 tools: [{ googleSearch: {} }]
             }
         });
@@ -54,7 +53,7 @@ export class GeminiService {
                 onChunk(text);
             }
             
-            // 提取搜索来源（指令要求必须展示）
+            // 提取搜索来源（内部保留，UI 层根据需求决定是否展示）
             const groundingChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks;
             if (groundingChunks && onSources) {
                 const sources: GroundingSource[] = groundingChunks
