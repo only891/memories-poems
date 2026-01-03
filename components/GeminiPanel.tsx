@@ -16,12 +16,11 @@ interface GeminiPanelProps {
 }
 
 const LOADING_MESSAGES = [
-  "正在查阅古籍...",
-  "寻访名士...",
-  "推敲字句...",
-  "斟酌韵律...",
-  "神游太虚...",
-  "煮酒论诗..."
+  "正在开启深度推理模式...",
+  "AI 正在沉思诗句意境...",
+  "正在跨时空查阅文献...",
+  "推敲典故中...",
+  "神游千古，感悟诗情..."
 ];
 
 const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCacheUpdate, onClose }) => {
@@ -40,7 +39,6 @@ const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCache
     
     currentPoemRef.current = poemText;
 
-    // Hit cache first
     if (cachedData) {
         setExplanation(cachedData.text);
         setSources(cachedData.sources || []);
@@ -48,7 +46,6 @@ const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCache
         return;
     }
 
-    // No cache, fetch new
     setLoading(true);
     setExplanation('');
     setSources([]);
@@ -63,8 +60,10 @@ const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCache
             if (currentPoemRef.current === poemText) {
                 accumulatedText += chunk;
                 setExplanation(accumulatedText);
-                // 收到第一个字块时立即取消 loading 状态，让用户感觉速度很快
-                setLoading(false); 
+                // 当产生一定内容时取消全屏加载，提升感知体验
+                if (accumulatedText.length > 30) {
+                    setLoading(false); 
+                }
             }
         },
         (newSources) => {
@@ -80,14 +79,14 @@ const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCache
              }
         }
       );
-      // Stream finished, update cache
+      
       if (currentPoemRef.current === poemText) {
          onCacheUpdate(poemText, { text: accumulatedText, sources: accumulatedSources });
       }
     } catch (e) {
       console.error(e);
       if (currentPoemRef.current === poemText) {
-        setExplanation('AI 正在翻阅古籍，请稍后再试...');
+        setExplanation('AI 在深思时遇到了迷雾（请检查 API Key 权限或余额），请稍后再试。');
       }
     } finally {
       if (currentPoemRef.current === poemText) {
@@ -105,7 +104,6 @@ const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCache
     }
   }, [isVisible, handleExplain]);
 
-  // Rotate loading messages
   useEffect(() => {
     let interval: number;
     if (loading) {
@@ -114,12 +112,11 @@ const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCache
       interval = window.setInterval(() => {
         index = (index + 1) % LOADING_MESSAGES.length;
         setLoadingText(LOADING_MESSAGES[index]);
-      }, 1200);
+      }, 1800);
     }
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Simple swipe down detection
   const handleTouchStart = (e: React.TouchEvent) => {
       setTouchStart(e.touches[0].clientY);
   };
@@ -128,7 +125,7 @@ const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCache
       if (touchStart === null) return;
       const currentY = e.touches[0].clientY;
       const diff = currentY - touchStart;
-      if (diff > 50) { // Swipe down threshold
+      if (diff > 50) { 
           onClose();
           setTouchStart(null);
       }
@@ -136,34 +133,31 @@ const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCache
 
   return (
     <>
-        {/* Backdrop */}
         <div 
-            className={`absolute inset-0 bg-slate-900/20 backdrop-blur-[1px] z-40 transition-opacity duration-500 ${isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            className={`absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] z-40 transition-opacity duration-500 ${isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
             onClick={onClose}
         />
         
-        {/* Drawer Panel */}
         <div 
-            className={`absolute bottom-0 left-0 right-0 h-[60vh] bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}
+            className={`absolute bottom-0 left-0 right-0 h-[75vh] bg-white rounded-t-[32px] shadow-[0_-12px_40px_rgba(0,0,0,0.15)] z-50 transform transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}
         >
-            {/* Header / Handle */}
             <div 
-                className="flex items-center justify-center p-3 border-b border-slate-100 cursor-pointer shrink-0"
+                className="flex items-center justify-center p-5 border-b border-slate-50 cursor-pointer shrink-0"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
-                onClick={onClose} // Also close on header click for desktop/ease
+                onClick={onClose}
             >
-                <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-1" />
+                <div className="w-14 h-1.5 bg-slate-200 rounded-full" />
             </div>
 
-            {/* Content */}
-            <div className="flex-1 flex flex-col p-4 overflow-hidden">
-                <div className="flex justify-between items-start mb-4 shrink-0">
-                    <div>
-                        <h3 className="text-lg font-black text-amber-900 flex items-center gap-1.5 mb-1">
-                            <span>✨ 深度典故解析</span>
-                        </h3>
-                        <p className="text-xs text-slate-400 italic">
+            <div className="flex-1 flex flex-col p-6 overflow-hidden">
+                <div className="flex justify-between items-start mb-6 shrink-0">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="bg-amber-100 text-amber-800 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-widest">Thinking Mode</span>
+                            <h3 className="text-xl font-black text-amber-900">千古绝句深思</h3>
+                        </div>
+                        <p className="text-sm text-slate-500 font-serif border-l-4 border-amber-200 pl-4 py-1 italic bg-amber-50/30 rounded-r-lg">
                             {poemText}
                         </p>
                     </div>
@@ -171,16 +165,45 @@ const GeminiPanel: React.FC<GeminiPanelProps> = ({ poemText, cachedData, onCache
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative text-slate-700">
                     {loading && !explanation ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3">
-                            <div className="w-6 h-6 border-2 border-amber-200 border-t-amber-600 rounded-full animate-spin"></div>
-                            <span className="text-xs text-amber-600 animate-pulse transition-all duration-300">{loadingText}</span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center space-y-6">
+                            <div className="relative">
+                                <div className="w-16 h-16 border-4 border-amber-100 border-t-amber-600 rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-3 h-3 bg-amber-500 rounded-full animate-ping"></div>
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-base font-bold text-amber-800 mb-2">Gemini 正在进行深度文化推理</p>
+                                <p className="text-xs text-slate-400 animate-pulse">{loadingText}</p>
+                            </div>
                         </div>
                     ) : (
-                        <div className="pb-4">
-                            <div className="text-sm leading-7 text-justify animate-fade-in font-serif mb-4 markdown-body">
+                        <div className="pb-10 animate-fade-in">
+                            <div className="text-[17px] leading-[2] text-justify font-serif mb-10 markdown-body px-1">
                                 <ReactMarkdown>{explanation}</ReactMarkdown>
                             </div>
-                            {/* Sources display hidden as per request */}
+
+                            {sources.length > 0 && (
+                                <div className="mt-10 pt-8 border-t border-slate-100">
+                                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-5">参考来源 · 引经据典</h4>
+                                    <div className="grid gap-3">
+                                        {sources.map((source, i) => (
+                                            <a 
+                                                key={i} 
+                                                href={source.url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-amber-50 transition-all border border-transparent hover:border-amber-100 group shadow-sm"
+                                            >
+                                                <span className="text-xs font-medium text-slate-600 truncate mr-4 group-hover:text-amber-800">{source.title}</span>
+                                                <svg className="w-4 h-4 text-slate-300 group-hover:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                                </svg>
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
