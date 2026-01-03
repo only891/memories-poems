@@ -24,14 +24,12 @@ export class GeminiService {
     onChunk: (text: string) => void,
     onSources?: (sources: GroundingSource[]) => void
   ) {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) throw new Error("API_KEY is not defined");
-    
-    const ai = new GoogleGenAI({ apiKey });
+    // 按照指南要求：必须使用 new GoogleGenAI({ apiKey: process.env.API_KEY })
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     try {
         const responseStream = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             contents: `请简要赏析：${query}。
             重点：
             1. 解释诗句含义与核心典故。
@@ -68,10 +66,7 @@ export class GeminiService {
 
   // Generate artistic background based on poem
   async generateArt(prompt: string, size: "1K" | "2K" | "4K" = "1K") {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) throw new Error("API_KEY is not defined");
-
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-image-preview',
       contents: {
@@ -98,10 +93,7 @@ export class GeminiService {
 
   // Animate image with Veo
   async animateScene(imageB64: string, prompt: string) {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) throw new Error("API_KEY is not defined");
-
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const cleanB64 = imageB64.split(',')[1];
     
     let operation = await ai.models.generateVideos({
@@ -119,12 +111,13 @@ export class GeminiService {
     });
 
     while (!operation.done) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 10000));
       operation = await ai.operations.getVideosOperation({ operation });
     }
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    const response = await fetch(`${downloadLink}&key=${apiKey}`);
+    // 使用 process.env.API_KEY 进行视频下载鉴权
+    const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   }
